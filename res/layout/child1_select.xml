@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical">
+
+    <!-- Android4.0でなぜかレイアウトが崩れる。この画面のみ、汚いレイアウトだがこれが何とか崩れないレイアウト -->
+
+
+
+
+    <LinearLayout
+        android:id="@+id/child1_select_titlebar"
+        android:layout_width="fill_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/d_back"
+        android:orientation="horizontal" >
+
+
+        <LinearLayout
+            android:layout_width="0px"
+            android:layout_height="fill_parent"
+            android:layout_weight="3"
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/child1_select_title_text"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="20sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:orientation="horizontal" >
+
+
+
+        <ListView
+            android:id="@+id/listView1"
+            android:layout_width="fill_parent"
+            android:layout_height="200dp"
+            android:scrollingCache="false" >
+
+    	</ListView>
+    </LinearLayout>
+
+</LinearLayout>

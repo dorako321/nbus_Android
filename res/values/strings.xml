@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">nbus.jp</string>
+    
+    <string name="tabview1_search">search</string>
+    <string name="tabview2_bookmark">bookmark</string>
+    
+    <string name="child1_hint_from"></string>
+    <string name="child1_hint_to"></string>
+    
+    <string name="child_search_from">乗車停留所名</string>
+	<string name="child_search_to">降車停留所名</string>
+	<string name="child_search_search">検索</string>
+
+	
+	<string name="child_result_weekday">平日</string>
+	<string name="child_result_saturday">土曜</string>
+	<string name="child_result_holiday">日祝</string>
+	<string name="child_result_all">全表示</string>
+	<string name="child_result_bytime">現在時刻</string>
+	<string name="child_result_addbookmark">＠</string>
+	
+	<string name="child2_bookmark_edit">Edit</string>
+	<string name="card_reading_error">カードが離れたかスマートカードではありません。</string>
+	<string name="balance_label">カード残高:</string>
+	<string name="currency_denomination_back">円</string>
+	<string name="currency_denomination_front"> </string>
+	<string name="card_util_getoff">降車</string>
+	<string name="card_util_geton">乗車</string>
+	<string name="card_util_charge">積増</string>
+	<string name="card_util_regist">登録</string>
+	<string name="card_util_undefined">不明</string>
+	<string name="label_balance">残高</string>
+	<string name="cardhistories_notfound">カードの履歴が登録されていません。</string>
+	
+</resources>
