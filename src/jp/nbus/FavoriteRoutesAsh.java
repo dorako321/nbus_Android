@@ -1,5 +1,8 @@
 package jp.nbus;
 
+import android.R.integer;
+import android.R.string;
+
 /**
 * お気に入りを構造体っぽく使うためのクラス(modified)
 * Preferencesから取得したお気に入りの経路を入れる
@@ -32,11 +35,11 @@ public class FavoriteRoutesAsh {
      */
     public FavoriteRoutesAsh(int id,
     		int fm_id,
-    		String fm_name,
-    		String fm_ruby,
-    		int to_id,
-    		String to_name,
-    		String to_ruby,
+    		String fm_name, 
+    		String fm_ruby, 
+    		int to_id, 
+    		String to_name, 
+    		String to_ruby, 
     		int co,
     		String co_name){
     	this.id = id;

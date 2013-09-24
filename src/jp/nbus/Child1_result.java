@@ -15,6 +15,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -457,6 +459,96 @@ public class Child1_result extends Activity{
             //-----[読み込み終了の通知]
             handler.sendEmptyMessage(0);
         }
+        /*public void run() {
+
+        	String str_json = "";	//通信して取得したJSONな文字列、後でJSONObjectに変換される
+        	JSONObject rootObject;
+        	JSONArray json_timetables;
+
+        	HttpClient httpClient = new DefaultHttpClient();
+
+    		//URLを生成
+            StringBuilder uri = new StringBuilder("http://nbus.jp/path_maker.php?from="
+            										+Parent1.geton_name+"&to="
+            										+Parent1.getoff_name+"&week="
+            										+String.valueOf(Parent1.result_week));
+
+            HttpGet request = new HttpGet(uri.toString());
+            HttpResponse httpResponse = null;
+
+            int status = -1;
+
+            try {
+                httpResponse = httpClient.execute(request);
+                status = httpResponse.getStatusLine().getStatusCode();
+            } catch (Exception e) {
+                Log.d("Child1_result", "network_error");
+                net_error = true;
+                error_message = "Error:ネットワークに接続できません。";
+                //return;	returnすると繋がるまで何回でも繰り返してダイアログが終わらない
+            }
+
+
+
+            if (HttpStatus.SC_OK == status) {
+                try {
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    httpResponse.getEntity().writeTo(outputStream);
+                    str_json = outputStream.toString(); // JSONデータ
+
+                    //取得したJSONな文字列の先頭3文字(3バイト)をスキップして保存し直す
+                    //BOMをスキップしたいので
+                    //str_json = str_json.substring(3, str_json.length());
+
+                } catch (Exception e) {
+                      Log.d("Child1_result", "error_httpResponse");
+                }
+
+
+                //文字列からJSONObjectに変換
+                try {
+					rootObject = new JSONObject(str_json);
+	                json_error = rootObject.getInt("error");	//エラー起きてないか取得
+	                if(json_error == 0){	//エラー無し
+	                	json_timetables = rootObject.getJSONArray("timetable");
+
+	                	int lenght = json_timetables.length();
+	                	Parent1.timetables = new Timetable[lenght];	//JSONArrayのサイズで配列を作り直す
+	                	//構造体っぽいクラスにJSONObject Parent1.json_timetablesからデータを格納していく
+	                	for(int i=0; i<lenght; i++){
+	                		JSONObject time = json_timetables.getJSONObject(i);
+
+	                		try{	//JSONObjectから各項目を取得
+		                		Parent1.timetables[i] = new Timetable(time.getInt("arr_time"),
+										time.getInt("dep_time"),
+										time.getString("via"),
+										time.getString("detail"));
+	                		}catch(JSONException e){	//経由地が無くてエラーが出た場合はこっちでキャッチ
+		                		Parent1.timetables[i] = new Timetable(time.getInt("arr_time"),
+										time.getInt("dep_time"),
+										"",	//viaの文字列を空に
+										time.getString("detail"));
+	                		}
+
+	                	}
+
+	                }else{	//エラー有り
+	                	json_error_reason = rootObject.getString("error_reason");
+	                	//Log.e(String.valueOf(Parent1.json_error_id), Parent1.json_error_reason);
+	                }
+
+				} catch (JSONException e) {
+					e.printStackTrace();
+					Log.d("Child1_result", "error_JSONObject");
+				}
+            } else {
+                Log.d("Child1_result", "Status" + status);
+                //return;	returnすると繋がるまで何回でも繰り返してダイアログが終わらない
+            }
+
+            //-----[読み込み終了の通知]
+            handler.sendEmptyMessage(0);
+        }*/
     }
 
 	//通信終了後に呼ばれる
@@ -493,6 +585,60 @@ public class Child1_result extends Activity{
 
     //お気に入りに追加ボタンが押された時
     public void addBookmark() throws JSONException{
+		/*SharedPreferences sharedpreferences = getSharedPreferences("Nbus_Android", Activity.MODE_PRIVATE);
+		int sum = sharedpreferences.getInt("DataSum", 0);	//お気に入りの総数を取得
+		JSONObject root = new JSONObject();
+		JSONArray route_array = new JSONArray();
+		JSONObject route = new JSONObject();
+		Boolean overlap = false; 	//重複してるかフラグ
+		if(sum!=0){	//データが有る時、データをチェックして今回の登録が二重登録とならないかチェックしてから追加
+			String str_json = sharedpreferences.getString("JSON", "");
+			root = new JSONObject(str_json);
+			route_array = root.getJSONArray("route");
+			for(int i=0; i<route_array.length(); i++){
+				route = route_array.getJSONObject(i);
+				String fav_arr = route.getString("arr");
+				String fav_dep = route.getString("dep");
+				if(Parent1.geton_name.equals(fav_arr) && Parent1.getoff_name.equals(fav_dep)){	//重複してた
+					overlap = true;
+				}
+			}
+			if(overlap){	//重複してたら
+				Toast.makeText(getApplicationContext(), "この経路はすでに登録されています。", Toast.LENGTH_SHORT).show();
+			}else{			//重複してなかったらデータを用意
+				route = new JSONObject();
+				route.put("arr", Parent1.geton_name);
+				route.put("dep", Parent1.getoff_name);
+				route_array.put(route);
+				root.put("route", route_array);
+				sum++;
+			}
+		}else{	//お気に入りが未登録の時、データを用意
+			route.put("arr", Parent1.geton_name);
+			route.put("dep", Parent1.getoff_name);
+			route_array.put(route);
+			root.put("route", route_array);
+			sum++;
+		}
+
+		if(!overlap){	//重複して無ければお気に入りに保存
+			String str_json = root.toString();
+			//Log.e("result", str_json);
+			SharedPreferences.Editor editor = sharedpreferences.edit();
+			editor.putInt("DataSum", sum);
+			editor.putString("JSON", str_json);
+			editor.commit();
+			Toast.makeText(getApplicationContext(), "お気に入りに登録しました。", Toast.LENGTH_SHORT).show();
+		}
+
+		 */
+		/*debug
+		SharedPreferences aa = getSharedPreferences("Nbus_Android", Activity.MODE_PRIVATE);
+		String j = aa.getString("JSON", "non");
+		int s = aa.getInt("DataSum", 0);
+		Log.d("asd", "json="+j+" sum="+String.valueOf(s));
+		*/
+
     	FavoriteDBAccess dbAccess = new FavoriteDBAccess(this);
 
     	//重複チェック

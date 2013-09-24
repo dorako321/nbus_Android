@@ -3,24 +3,23 @@ package jp.nbus;
 import android.content.res.Resources;
 
 //履歴表示用の簡素なclass
-public class TinyHistory {
+public class TinyHistory{
 	public int utilType;
 	public String date;
 	public String time;
 	public int balance;
 	public int fare;
-
-	public String getUtilTypeInString(Resources resource) {
+	public String getUtilTypeInString(Resources resource){
 		String utilTypeStr;
 
-		switch (utilType) {
+		switch (utilType){
 		case 4:
 			utilTypeStr = resource.getString(R.string.card_util_getoff);
 			break;
 		case 3:
-			if (fare < 0) {
+			if(fare<0){
 				utilTypeStr = resource.getString(R.string.card_util_charge);
-			} else {
+			}else {
 				utilTypeStr = resource.getString(R.string.card_util_geton);
 			}
 			break;
@@ -35,6 +34,6 @@ public class TinyHistory {
 			break;
 		}
 		return utilTypeStr;
-
+		
 	}
 }

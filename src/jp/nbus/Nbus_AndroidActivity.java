@@ -1,6 +1,8 @@
 package jp.nbus;
 
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import jp.nbus.SmartCardAccess.SmartCardAccessException;
 import jp.nbus.util.*;
 
@@ -9,6 +11,7 @@ import com.google.ads.AdSize;
 import com.google.ads.AdView;
 
 import android.app.TabActivity;
+import android.content.Context;
 import android.content.Intent;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
@@ -28,7 +31,7 @@ public class Nbus_AndroidActivity extends TabActivity {
 
 	static Boolean select_bookmark = false;	//ブックマーク一覧から項目が選択されてChild1_resultに飛ばされた時に使うフラグ
 	static Boolean select_stopname = false; //ブックマーク一覧からバス停名のみの項目が選択されてChild1_selectに飛ばす時に使うフラグ
-
+	
 	private AdView adView;
 
     @Override

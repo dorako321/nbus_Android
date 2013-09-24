@@ -47,18 +47,11 @@ import android.nfc.tech.NfcF;
 
 public class Child1_search extends Activity{
 
-	/**
-	 * 乗車停留所情報
-	 */
-	private AutoCompleteTextView fmAutoCompleteTextView;
-	/**
-	 * 降車停留所情報
-	 */
-	private AutoCompleteTextView toAutoCompleteTextView;
-	/**
-	 * 通信中ダイアログ
-	 */
-	private ProgressDialog dialog;
+	private AutoCompleteTextView edit_geton;	//停留所入力欄
+	private AutoCompleteTextView edit_getoff;
+
+
+	private ProgressDialog dialog;	//通信中ダイアログ
 
 	//通信中に発生するエラーについて
 	private Boolean net_error = false;	//エラーが起きているか
@@ -84,23 +77,23 @@ public class Child1_search extends Activity{
 
 
         //乗車停留所入力欄
-    	fmAutoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.edit_geton);
-    	fmAutoCompleteTextView.setWidth((int)(Parent1.disp_width*0.7));
-    	fmAutoCompleteTextView.setHint("例：長崎駅前");
-    	fmAutoCompleteTextView.setThreshold(1);
+    	edit_geton = (AutoCompleteTextView) findViewById(R.id.edit_geton);
+    	edit_geton.setWidth((int)(Parent1.disp_width*0.7));
+    	edit_geton.setHint("例：長崎駅前");
+    	edit_geton.setThreshold(1);
     	//もし一度入力したあとにもう一度この画面に戻ってきてたら前回入力データを入力
     	if(!TextUtils.isEmpty(Parent1.geton_name)){
-    		fmAutoCompleteTextView.setText(Parent1.geton_name);
+    		edit_geton.setText(Parent1.geton_name);
     	}
 
     	//降車停留所入力欄
-    	toAutoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.edit_getoff);
-    	toAutoCompleteTextView.setWidth((int)(Parent1.disp_width*0.7));
-    	toAutoCompleteTextView.setHint("例：商業入口");
-    	toAutoCompleteTextView.setThreshold(1);
+    	edit_getoff = (AutoCompleteTextView) findViewById(R.id.edit_getoff);
+    	edit_getoff.setWidth((int)(Parent1.disp_width*0.7));
+    	edit_getoff.setHint("例：商業入口");
+    	edit_getoff.setThreshold(1);
     	//もし一度入力したあとにもう一度この画面に戻ってきてたら前回入力データを入力
     	if(!TextUtils.isEmpty(Parent1.getoff_name)){
-    		toAutoCompleteTextView.setText(Parent1.getoff_name);
+    		edit_getoff.setText(Parent1.getoff_name);
     	}
 
     	//Android2.3以降なら自動補完を行う
@@ -108,8 +101,8 @@ public class Child1_search extends Activity{
     		//入力補完用に停留所名一覧を準備
             BusStopName = getResources().getStringArray(R.array.bus_stop_name);
             ArrayAdapter<String> adapter_bus = new ArrayAdapter<String>(this, R.layout.autocomplete_text, BusStopName);
-        	fmAutoCompleteTextView.setAdapter(adapter_bus);		//乗車
-        	toAutoCompleteTextView.setAdapter(adapter_bus);	//降車
+        	edit_geton.setAdapter(adapter_bus);		//乗車
+        	edit_getoff.setAdapter(adapter_bus);	//降車
     	}
 
     	//検索ボタン
@@ -128,9 +121,9 @@ public class Child1_search extends Activity{
 			@Override
 			public void onClick(View arg0) {
 				Parent1.result_all = false;	//結果表示画面では全表示ではなく現在時刻からの時刻表表示モードにしとく
-				String geton_edit = fmAutoCompleteTextView.getText().toString();	//乗車停留所
+				String geton_edit = edit_geton.getText().toString();	//乗車停留所
 				Parent1.geton_name = geton_edit.replaceAll("　", "").replaceAll(" ", "");	//空白を削除
-				String getoff_edit = toAutoCompleteTextView.getText().toString();	//降車停留所
+				String getoff_edit = edit_getoff.getText().toString();	//降車停留所
 				Parent1.getoff_name = getoff_edit.replaceAll("　", "").replaceAll(" ", "");	//空白を削除
 				if(TextUtils.isEmpty(Parent1.geton_name)){	//乗車停留所が未入力
 					Toast.makeText(getApplicationContext(), "乗車停留所を入力してください。", Toast.LENGTH_SHORT).show();
@@ -172,10 +165,10 @@ public class Child1_search extends Activity{
 		smartCardAccess.enableDetection(this);
 
 	}
-
+	
 	public void send_neighbor(){
 	/*
-	 * 停留所名検索メソッド(Ash API対応)
+	 * 停留所名検索メソッド(Ash API対応)	
 	 */
 
 		//-----[ダイアログの設定]
@@ -188,9 +181,9 @@ public class Child1_search extends Activity{
         //-----[ローディングの描画は別スレッドで行う]
         Thread thread = new Thread(new AshProgress());
         thread.start();
-
+        
 	}
-
+	
 	//ダイアログが出てる間に通信
 	private class AshProgress implements Runnable {
         public void run() {
@@ -204,7 +197,7 @@ public class Child1_search extends Activity{
             StringBuilder uri = new StringBuilder("http://nbus.jp/ng.php?fm="
             										+Parent1.geton_name+"&to="
             										+Parent1.getoff_name);
-
+        	
             HttpGet request = new HttpGet(uri.toString());
             HttpResponse httpResponse = null;
 
@@ -241,12 +234,12 @@ public class Child1_search extends Activity{
 	                //json_error = rootObject.getInt("error");	//エラー起きてないか取得
 	                											//Ashだとここでerrorがでないようだ
                 	//json_timetables = rootObject.getJSONArray("timetable");
-
+					
                 	int length = rootArrayObject.length();
                 	Parent1.busstops = new BusStop[length];	//JSONArrayのサイズで配列を作り直す
                 	//構造体っぽいクラスにJSONObject Parent1.json_timetablesからデータを格納していく
                 	for(int i=0; i<length; i++){
-
+               		
                 		try{
                     		JSONObject stop = rootArrayObject.getJSONObject(i);
                     		JSONObject from = stop.getJSONObject("fm");
@@ -264,6 +257,18 @@ public class Child1_search extends Activity{
                 		} catch (JSONException e){
                 			//TODO 該当するバス停がないときの処理
                 		}
+                		/*
+                		try{	//JSONObjectから各項目を取得
+	                		Parent1.timetables[i] = new Timetable(time.getInt("arr_time"),
+									time.getInt("dep_time"),
+									time.getString("via"),
+									time.getString("detail"));
+                		}catch(JSONException e){	//経由地が無くてエラーが出た場合はこっちでキャッチ
+	                		Parent1.timetables[i] = new Timetable(time.getInt("arr_time"),
+									time.getInt("dep_time"),
+									"",	//viaの文字列を空に
+									time.getString("detail"));
+                		}*/
                 	}
 				} catch (JSONException e) {
 					e.printStackTrace();
@@ -307,8 +312,8 @@ public class Child1_search extends Activity{
             }
         }
     };
-
-
+	
+    
 	@Override
     public void onPause(){
 		super.onPause();

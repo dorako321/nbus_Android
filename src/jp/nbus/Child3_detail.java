@@ -1,19 +1,50 @@
 package jp.nbus;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 public class Child3_detail extends Activity{
 
+	private int favorite_sum;	//お気に入りの登録件数
 	private ListView listview;
 
 	public static String IDM_STATIC;
+
+	private ProgressDialog dialog;	//通信中ダイアログ
+
+	//通信中に発生するエラーについて
+	private Boolean net_error = false;	//エラーが起きているか
+	private String error_message = "";	//エラーメッセージ
+
+	//nbus.jpから帰って来るエラーについて
+	private int json_error;	//エラー起きてないか
+	private String json_error_reason;	//起きてた場合、理由は何か
 
 	private SmartCardAccess smartCardAccess;
 
