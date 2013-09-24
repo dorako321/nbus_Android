@@ -3,8 +3,6 @@ package jp.nbus;
 import java.io.ByteArrayOutputStream;
 import java.util.Calendar;
 
-import jp.nbus.Child1_select.Progress;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -18,20 +16,15 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.text.format.Time;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
-import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -42,7 +35,7 @@ public class Child1_select extends Activity {
 	private ProgressDialog dialog;	//通信中ダイアログ
 	private ListView listview;
 	private TextView title;
-	
+
 	//通信中に発生するエラーについて
 	private Boolean net_error = false;	//エラーが起きているか
 	private String error_message = "";	//エラーメッセージ
@@ -87,9 +80,9 @@ public class Child1_select extends Activity {
 	                Parent1.getoff_id = stop.toStopId;
 	                //result_weekは別途設定済み
 	                Parent1.route = stop.fromStopName + "→" + stop.toStopName;//画面遷移先Activityのtitlebarで表示する用のString
-	                
+
 	                send_url();//リクエストを送る
-	                
+
 	                //Parent1 parentActivity = ((Parent1)getParent());
 	    		    //parentActivity.showChild_detail();
                 }
@@ -106,7 +99,7 @@ public class Child1_select extends Activity {
 		}else{	//平日
 			Parent1.result_week = 0;
 		}
-        
+
         //NFC
         smartCardAccess = new SmartCardAccess();
 		smartCardAccess.initialize(this);
@@ -134,7 +127,7 @@ public class Child1_select extends Activity {
 
 		//リストビュー
         make_adapter();
-        
+
 		if(Nbus_AndroidActivity.select_bookmark == true){	//ブックマーク選択でタブ切り替えが起きた時は結果表示に飛ばす
 			Parent1 parentActivity = (Parent1)getParent();
 	        parentActivity.showChild_result();
@@ -153,7 +146,7 @@ public class Child1_select extends Activity {
         adapter = new ArrayAdapter<String>(this, R.layout.row, R.id.row_textview1);
         Parent1.result_time_position = 0;	//選ばれた項目が何番目か
         emptyResult = false;//空の結果を受けとってないと仮定。実際にはあとでadapterの数から把握する。
-    	
+
     	String fromStopName;
     	String toStopName;
     	String companyName;
@@ -173,11 +166,11 @@ public class Child1_select extends Activity {
                 Parent1.geton_id = stop.fromStopId;
                 Parent1.getoff_id = stop.toStopId;
                 //result_weekはonCreateで別途設定済み…
-                
+
                 Parent1.route = stop.fromStopName + "→" + stop.toStopName;//画面遷移先Activityのtitlebarで表示する用のString
-                
+
                 send_url();//リクエストを送る
-                
+
             }
         listview.setAdapter(adapter);
         listview.invalidateViews();
@@ -258,7 +251,7 @@ public class Child1_select extends Activity {
 	                	int lenght = json_timetables.length();
 	                	Parent1.timetables = new Timetable[lenght];	//JSONArrayのサイズで配列を作り直す
 	                	//構造体っぽいクラスにJSONObject Parent1.json_timetablesからデータを格納していく
-	                	
+
 	                	for(int i=0; i<lenght; i++){
 	                		JSONObject time = json_timetables.getJSONObject(i);
 	                		String via = null;

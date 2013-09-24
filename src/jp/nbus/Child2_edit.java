@@ -1,13 +1,9 @@
 package jp.nbus;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
@@ -26,7 +22,6 @@ import android.widget.ListView;
  */
 public class Child2_edit extends Activity{
 
-	private int favorite_sum = 0;	//お気に入り登録数
 	private ListView listview;		//リストビュー
 
 	private SmartCardAccess smartCardAccess;

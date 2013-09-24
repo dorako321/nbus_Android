@@ -16,7 +16,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -35,7 +34,6 @@ import android.widget.Toast;
 
 public class Child2_bookmark extends Activity{
 
-	private int favorite_sum;	//お気に入りの登録件数
 	private ListView listview;
 
 
@@ -384,9 +382,6 @@ public class Child2_bookmark extends Activity{
 		public void run() {
 			Log.d("Child1_search", "progress");
 			String str_json = ""; // 通信して取得したJSONな文字列、後でJSONObjectに変換される
-			JSONObject rootObject;
-			JSONArray json_timetables;
-
 			HttpClient httpClient = new DefaultHttpClient();
 			// URLを生成
 			StringBuilder uri = new StringBuilder("http://nbus.jp/ng.php?fm="
