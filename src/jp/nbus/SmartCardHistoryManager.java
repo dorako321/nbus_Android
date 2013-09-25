@@ -3,17 +3,11 @@ package jp.nbus;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import android.content.ContentProvider;
-import android.content.ContentValues;
 import android.content.Context;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
-import android.net.Uri;
-import android.util.Log;
 
 public class SmartCardHistoryManager extends SQLiteOpenHelper{
 
@@ -40,13 +34,12 @@ public class SmartCardHistoryManager extends SQLiteOpenHelper{
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 	public void putSmartCardHistory(SQLiteDatabase db,SmartCardHistory[] smartCardHistories,String idm){
-		int length = smartCardHistories.length;
-	//	Log.i("HistoryManager", String.format("smartCardHistories=%d",length));
-		
+
+
 		//String idm = smartCardHistories[0].getIDm();
 
 		Cursor c = db.rawQuery("SELECT id,bytehistory,idm FROM bytehistories WHERE idm LIKE '"+idm+"' ORDER BY id DESC LIMIT 1;", null);
@@ -56,9 +49,9 @@ public class SmartCardHistoryManager extends SQLiteOpenHelper{
 		if(c.getCount()>0){
 			byteLastHistory = c.getBlob(1);//該当IDmの最後の履歴を格納。なければ0x00で埋まった状態になっている。
 		}
-		
+
 		int i = 0;
-		
+
 		for (SmartCardHistory history : smartCardHistories){//今回カードから取得した履歴配列(最新のものから昇順に格納)を昇順に走査
 			if(Arrays.equals(byteLastHistory, history.getByteHistory())){//DB上の該当IDmの最後の履歴と取得した履歴の要素を比較。マッチするとfor文を抜ける
 				break;
@@ -78,7 +71,7 @@ public class SmartCardHistoryManager extends SQLiteOpenHelper{
 				currentId = -1;
 			}
 	//		Log.i("HistoryManager",String.format("currentRowid= %d",currentId));
-			
+
 			c = db.rawQuery("SELECT idm FROM idm WHERE idm LIKE '"+idm+"';", null);//IDmテーブルにIDmが存在するかどうか調べる
 			boolean existIDm;//無い場合はトランザクションの最後のほうでIDmを追加
 			if (c.getCount()>0) {
@@ -86,7 +79,7 @@ public class SmartCardHistoryManager extends SQLiteOpenHelper{
 			}else{
 				existIDm = false;
 			}
-			
+
 			db.beginTransaction();//トランザクションの開始
 			SQLiteStatement stmtByte = db.compileStatement("INSERT INTO bytehistories (id,bytehistory, idm) VALUES (?, ?, ?);");
 			SQLiteStatement stmtCache = db.compileStatement("INSERT INTO historiescache (byteid, utiltype, date, time, stop, system, balance, fare, idm) VALUES (?,?,?,?,?,?,?,?,?)");
@@ -98,7 +91,7 @@ public class SmartCardHistoryManager extends SQLiteOpenHelper{
 					stmtByte.bindLong(1, currentId);
 					stmtByte.bindBlob(2, smartCardHistories[j].getByteHistory());
 					stmtByte.bindString(3, idm);
-					
+
 					stmtCache.bindLong(1, currentId);
 					stmtCache.bindLong(2, smartCardHistories[j].getUtilType());
 					stmtCache.bindString(3, smartCardHistories[j].getDate());
@@ -108,7 +101,7 @@ public class SmartCardHistoryManager extends SQLiteOpenHelper{
 					stmtCache.bindLong(7, smartCardHistories[j].getBalance());
 					stmtCache.bindLong(8, smartCardHistories[j].getFare());
 					stmtCache.bindString(9, idm);
-					
+
 					stmtByte.executeInsert();
 					stmtCache.executeInsert();
 				}
@@ -122,7 +115,7 @@ public class SmartCardHistoryManager extends SQLiteOpenHelper{
 			}
 		}
 	}
-	
+
 	public SmartCardHistory[] keepSmartCardHistory(SmartCardHistory[] smartCardHistories){
 		//空の要素をチェックするメソッド。空の要素を含まない新しい配列を返す。(履歴を含まないカードでエラーを回避するための措置)
 		//あと運賃の計算もやっている
@@ -155,7 +148,7 @@ public class SmartCardHistoryManager extends SQLiteOpenHelper{
 		}
 		return cleanedSmartCardHistory;
 	}
-	
+
 	public String[][] idmList(SQLiteDatabase db){
 		Cursor c = db.rawQuery("SELECT id,idm,alias FROM idm ORDER BY id ASC;", null);
 		int count = c.getCount();

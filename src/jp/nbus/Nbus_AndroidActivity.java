@@ -1,8 +1,6 @@
 package jp.nbus;
 
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import jp.nbus.SmartCardAccess.SmartCardAccessException;
 import jp.nbus.util.*;
 
@@ -11,7 +9,6 @@ import com.google.ads.AdSize;
 import com.google.ads.AdView;
 
 import android.app.TabActivity;
-import android.content.Context;
 import android.content.Intent;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
@@ -31,7 +28,7 @@ public class Nbus_AndroidActivity extends TabActivity {
 
 	static Boolean select_bookmark = false;	//ブックマーク一覧から項目が選択されてChild1_resultに飛ばされた時に使うフラグ
 	static Boolean select_stopname = false; //ブックマーク一覧からバス停名のみの項目が選択されてChild1_selectに飛ばす時に使うフラグ
-	
+
 	private AdView adView;
 
     @Override
@@ -49,13 +46,13 @@ public class Nbus_AndroidActivity extends TabActivity {
 		View view2 = View.inflate(getApplication(), R.layout.tabview2, null);
 
 		//タブの中身をIntentで指定
-		intent = new Intent().setClass(this, Parent1.class);	//Parent1、Child1_系のアクティビティが入る
+		intent = new Intent().setClass(this, ParentSearch.class);	//Parent1、Child1_系のアクティビティが入る
 		spec = tabHost.newTabSpec("tab1")	//タブで選択された画面の中身
 				.setIndicator(view1)
 				.setContent(intent);
 		tabHost.addTab(spec);
 
-		intent = new Intent().setClass(this, Parent2.class);	//Parent2、Child2_系のアクティビティが入る
+		intent = new Intent().setClass(this, ParentFavorite.class);	//Parent2、Child2_系のアクティビティが入る
 		spec = tabHost.newTabSpec("tab2")
 				.setIndicator(view2)
 				.setContent(intent);
@@ -65,7 +62,7 @@ public class Nbus_AndroidActivity extends TabActivity {
 		if (Nfc.isNfc(this)) {
 			View view3 = View.inflate(getApplication(), R.layout.tabview3, null);
 
-			intent = new Intent().setClass(this, Parent3.class); // Parent3、Child3_系のアクティビティが入る
+			intent = new Intent().setClass(this, ParentSmartCard.class); // Parent3、Child3_系のアクティビティが入る
 			spec = tabHost.newTabSpec("tab3").setIndicator(view3)
 					.setContent(intent);
 			tabHost.addTab(spec);
@@ -121,9 +118,9 @@ public class Nbus_AndroidActivity extends TabActivity {
 				//残高の数値を生成しStringに改める
 				String nfcstatus = getString(R.string.balance_label)+getString(R.string.currency_denomination_front)+String.valueOf(smartCardAccess.getBalanceOfCard())+getString(R.string.currency_denomination_back);
 				//Activity名を使って三段階で結果表示用TextViewを取得
-			    Parent3 parent3 = (Parent3)getLocalActivityManager().getActivity("tab3");
+			    ParentSmartCard parent3 = (ParentSmartCard)getLocalActivityManager().getActivity("tab3");
 			    parent3.showChild_list();
-			    Child3_list child3_list = (Child3_list)parent3.getLocalActivityManager().getActivity("child1Activity_cardlist");
+			    SmartCardList child3_list = (SmartCardList)parent3.getLocalActivityManager().getActivity("child1Activity_cardlist");
 			    TextView child3_nfcstatus = (TextView) child3_list.findViewById(R.id.child3_nfc_status);
 
 				child3_nfcstatus.setText(nfcstatus);
