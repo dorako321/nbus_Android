@@ -3,6 +3,8 @@ package jp.nbus;
 import jp.nbus.R;
 import jp.nbus.R.id;
 import jp.nbus.R.layout;
+import jp.nbus.dto.BusStopDto;
+import jp.nbus.dto.FavoriteRoutesAshDto;
 import jp.nbus.dto.TimetableDto;
 import android.app.ActivityGroup;
 import android.content.Intent;
@@ -22,8 +24,8 @@ public class ParentSearch extends ActivityGroup{
 	static float dip_scale = 1.5f;
 	
 	//旧API用 兼 ng.php問い合わせ用
-	static String geton_name = null;	//入力された乗車停留所
-	static String getoff_name = null;	//入力された降車停留所
+	static String fmName = null;	//入力された乗車停留所
+	static String toName = null;	//入力された降車停留所
 	//Ash用
 	static int geton_id = 0;	//入力された乗車停留所
 	static int getoff_id = 0;	//入力された降車停留所

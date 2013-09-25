@@ -493,7 +493,7 @@ public class SearchResult extends Activity {
 
 		dbAccess.addFavorite(ParentSearch.geton_id,
 				ParentSearch.result_geton_name, ParentSearch.result_geton_ruby,
-				ParentSearch.getoff_id, ParentSearch.getoff_name,
+				ParentSearch.getoff_id, ParentSearch.toName,
 				ParentSearch.result_getoff_ruby, ParentSearch.company_id,
 				ParentSearch.company_name);
 		Toast.makeText(getApplicationContext(), "お気に入りに登録しました。",

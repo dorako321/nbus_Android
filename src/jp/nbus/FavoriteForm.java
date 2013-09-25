@@ -3,6 +3,8 @@ package jp.nbus;
 import java.io.ByteArrayOutputStream;
 import java.util.Calendar;
 
+import jp.nbus.dto.BusStopDto;
+import jp.nbus.dto.FavoriteRoutesAshDto;
 import jp.nbus.dto.TimetableDto;
 
 
@@ -95,8 +97,8 @@ public class FavoriteForm extends Activity{
             		if (ParentSearch.favoriteroutes[position].isSearchFavorite) {
 						//停留所名のみ保持されているとき
             			//Child1_selectに遷移
-            			ParentSearch.geton_name = ParentSearch.favoriteroutes[position].fm_name;
-            			ParentSearch.getoff_name = ParentSearch.favoriteroutes[position].to_name;
+            			ParentSearch.fmName = ParentSearch.favoriteroutes[position].fm_name;
+            			ParentSearch.toName = ParentSearch.favoriteroutes[position].to_name;
 
             			send_neighbor();
 					} else {
@@ -105,9 +107,9 @@ public class FavoriteForm extends Activity{
 	            		ParentSearch.geton_id = ParentSearch.favoriteroutes[position].fm_id;
 	            		ParentSearch.getoff_id = ParentSearch.favoriteroutes[position].to_id;
 	            		ParentSearch.company_id = ParentSearch.favoriteroutes[position].co;
-            			ParentSearch.geton_name = ParentSearch.favoriteroutes[position].fm_name;
-            			ParentSearch.getoff_name = ParentSearch.favoriteroutes[position].to_name;
-	            		ParentSearch.route = ParentSearch.geton_name+"→"+ParentSearch.getoff_name;	//タイトルバー用経路文字列
+            			ParentSearch.fmName = ParentSearch.favoriteroutes[position].fm_name;
+            			ParentSearch.toName = ParentSearch.favoriteroutes[position].to_name;
+	            		ParentSearch.route = ParentSearch.fmName+"→"+ParentSearch.toName;	//タイトルバー用経路文字列
 	            		ParentSearch.result_all = false;
 	            		Calendar calendar = Calendar.getInstance();
 	            		int week = calendar.get(Calendar.DAY_OF_WEEK)-1;	//曜日取得
@@ -226,8 +228,8 @@ public class FavoriteForm extends Activity{
 
     		//URLを生成
             StringBuilder uri = new StringBuilder("http://nbus.jp/path_maker.php?from="
-            										+ParentSearch.geton_name+"&to="
-            										+ParentSearch.getoff_name+"&week="
+            										+ParentSearch.fmName+"&to="
+            										+ParentSearch.toName+"&week="
             										+String.valueOf(ParentSearch.result_week));
 
             HttpGet request = new HttpGet(uri.toString());
@@ -374,7 +376,7 @@ public class FavoriteForm extends Activity{
 			HttpClient httpClient = new DefaultHttpClient();
 			// URLを生成
 			StringBuilder uri = new StringBuilder("http://nbus.jp/ng.php?fm="
-					+ ParentSearch.geton_name + "&to=" + ParentSearch.getoff_name);
+					+ ParentSearch.fmName + "&to=" + ParentSearch.toName);
 
 			HttpGet request = new HttpGet(uri.toString());
 			HttpResponse httpResponse = null;

@@ -1,6 +1,8 @@
 package jp.nbus;
 
 
+import jp.nbus.dto.FavoriteRoutesAshDto;
+
 import org.json.JSONException;
 import android.app.Activity;
 import android.app.AlertDialog;

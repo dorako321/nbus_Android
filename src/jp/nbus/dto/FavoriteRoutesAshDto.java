@@ -1,4 +1,4 @@
-package jp.nbus;
+package jp.nbus.dto;
 
 /**
  * お気に入りを構造体っぽく使うためのクラス(modified) Preferencesから取得したお気に入りの経路を入れる

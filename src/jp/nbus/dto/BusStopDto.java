@@ -1,4 +1,4 @@
-package jp.nbus;
+package jp.nbus.dto;
 /***** 構造体っぽく使うためのクラス *****/
 //APIから帰ってきたJSONからのデータを入れる
 /**

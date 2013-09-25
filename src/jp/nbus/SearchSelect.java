@@ -4,8 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Calendar;
 
 import jp.nbus.R;
-import jp.nbus.R.id;
-import jp.nbus.R.layout;
+import jp.nbus.dto.BusStopDto;
 import jp.nbus.dto.TimetableDto;
 
 import org.apache.http.HttpResponse;
@@ -86,10 +85,7 @@ public class SearchSelect extends Activity {
 	                //result_weekは別途設定済み
 	                ParentSearch.route = stop.fmName + "→" + stop.toName;//画面遷移先Activityのtitlebarで表示する用のString
 
-	                send_url();//リクエストを送る
-
-	                //Parent1 parentActivity = ((Parent1)getParent());
-	    		    //parentActivity.showChild_detail();
+	                sendUrl();//リクエストを送る
                 }
             }
         });
@@ -174,7 +170,7 @@ public class SearchSelect extends Activity {
 
                 ParentSearch.route = stop.fmName + "→" + stop.toName;//画面遷移先Activityのtitlebarで表示する用のString
 
-                send_url();//リクエストを送る
+                sendUrl();//リクエストを送る
 
             }
         listview.setAdapter(adapter);
@@ -184,7 +180,7 @@ public class SearchSelect extends Activity {
 
 
 	//情報再取得
-	public void send_url(){
+	public void sendUrl(){
 		//-----[ダイアログの設定]
         dialog = new ProgressDialog(getParent());	//通常はnew ProgressDialog(this)だがタブ内なのでgetParent()
         dialog.setTitle("通信中");
@@ -318,24 +314,28 @@ public class SearchSelect extends Activity {
             if(net_error){	//通信に失敗していた場合
               	net_error = false;	//フラグ下ろす
             	Toast.makeText(getApplicationContext(), error_message, Toast.LENGTH_LONG).show();
-            }else{			//通信には成功していた場合
-                if(json_error==0){	//正常に時刻表が取得できてたら
-                	ParentSearch parentActivity = ((ParentSearch)getParent());	//画面遷移
-        	        parentActivity.showChild_result();
-                }else{
-                	//エラーダイアログ
-                	new AlertDialog.Builder(getParent())
-                		.setTitle("エラー")
-                		.setMessage(json_error_reason)
-                		.setCancelable(false)
-                		.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                			public void onClick(DialogInterface dialog, int id) {
-                				dialog.cancel();
-                			}
-                		})
-                		.show();
-                }
+            	return;
             }
+
+            //通信に失敗していた場合
+			if (json_error != 0) {
+				// エラーダイアログ
+				new AlertDialog.Builder(getParent())
+						.setTitle("エラー")
+						.setMessage(json_error_reason)
+						.setCancelable(false)
+						.setPositiveButton("OK",
+								new DialogInterface.OnClickListener() {
+									public void onClick(DialogInterface dialog,
+											int id) {
+										dialog.cancel();
+									}
+								}).show();
+			}
+			//正常に取得
+			ParentSearch parentActivity = ((ParentSearch) getParent()); // 画面遷移
+			parentActivity.showChild_result();
+
 
 
         }

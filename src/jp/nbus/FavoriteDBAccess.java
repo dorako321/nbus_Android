@@ -1,5 +1,7 @@
 package jp.nbus;
 
+import jp.nbus.dto.FavoriteRoutesAshDto;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

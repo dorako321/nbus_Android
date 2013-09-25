@@ -23,12 +23,12 @@ public class SmartCardAccess {
 	private PendingIntent pendingIntent;
 	private IntentFilter[] intentFilter;
 	private String[][] techLists;
-	
+
 	//読み取り結果格納
 	private int balanceOfCard;
 	private byte[][] byteHistory;
 	private String idm;
-	
+
 	public void initialize(Context context){
         //NFC検出intentのあとの処理のためのForegroundDispatch引数の準備
 		//TODO:NfcAdapter.getDefaultAdapterの呼び出しをリフレクション経由でやらないと2.3.2以前で死ぬ
@@ -75,7 +75,7 @@ public class SmartCardAccess {
 		}
 
 	}
-	
+
 	public void enableDetection(Context context){
 		//FeliCa接触時のintentを優先的にもらうように
 		//nfcAdapter.enableForegroundDispatch((Activity) context, pendingIntent, intentFilter, techLists);
@@ -99,7 +99,7 @@ public class SmartCardAccess {
 			}
 		}
 	}
-	
+
 	public void disableDetection(Context context){
 		//FeliCa接触時のintentをもらわないようにする
 		//nfcAdapter.disableForegroundDispatch((Activity) context);
@@ -122,8 +122,8 @@ public class SmartCardAccess {
 			}
 		}
 	}
-	
-	
+
+
 	public void readSmartCard(Intent intent) throws SmartCardAccessException{
 		//NfcFなタグが見つかった場合の処理
 		//長崎スマートカードの読み取り用FeliCaコマンド
@@ -136,11 +136,11 @@ public class SmartCardAccess {
 	    															(byte)0x0c, (byte)0x80, (byte)0x00, (byte)0x81, (byte)0x00, (byte)0x81, (byte)0x01, (byte)0x81, (byte)0x02, (byte)0x82, (byte)0x00, (byte)0x82, (byte)0x01, (byte)0x82, (byte)0x02, (byte)0x82, (byte)0x03, (byte)0x82, (byte)0x04,
 	    															(byte)0x83, (byte)0x00, (byte)0x83, (byte)0x01, (byte)0x83, (byte)0x02};
 
-		
+
 	    //NfcAdapter上のTagを取得(どのようなTagが接触しているかなどか)
 		Tag tag = (Tag) intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
 		NfcF techF = NfcF.get(tag);
-		
+
 		try{
 		techF.connect();
 		if (techF.isConnected()){
@@ -155,13 +155,13 @@ public class SmartCardAccess {
 				cmdReadWoEncryption[i+2] = idmbyte[i];
 			}
 			idm = String.format("%02x%02x%02x%02x%02x%02x%02x%02x",idmbyte[0],idmbyte[1],idmbyte[2],idmbyte[3],idmbyte[4],idmbyte[5],idmbyte[6],idmbyte[7]);
-			
+
 			byte[] resServiceNumber = techF.transceive(cmdRequestServiceNumber);
 			//resServiceNumberの11,12両方がFFの場合は該当するサービスがないということ
 			if(!((resServiceNumber[11] == (byte)0xFF) && (resServiceNumber[12]==(byte)0xFF))){
 
 				byte[] resReadWoEncryption = techF.transceive(cmdReadWoEncryption);
-				
+
 				if((resReadWoEncryption[10]==(byte)0x00)&&(resReadWoEncryption[11]==(byte)0x00)){
 					//とりあえず残高を読み取ろう…
 					//bytebufferのallocateの引数がびみょい
@@ -170,14 +170,14 @@ public class SmartCardAccess {
 					bf.put((byte)0x00);
 					bf.put(resReadWoEncryption[48]);
 					bf.put(resReadWoEncryption[49]);
-					
+
 					balanceOfCard = bf.getInt(0);
-					
+
 		    		byteHistory = new byte[5][16];
-		    		
+
 			    	for(int i = 0; i < 5; i++) {
 			    		for(int j = 0; j < 16; j++) {
-			    			byteHistory[i][j] = resReadWoEncryption[16 * (i + 4) + 13 + j]; 
+			    			byteHistory[i][j] = resReadWoEncryption[16 * (i + 4) + 13 + j];
 			    		}
 			    	}
 				}else{
@@ -191,7 +191,7 @@ public class SmartCardAccess {
 			throw new SmartCardAccessException(String.format("IOException:%s",e));
 		}
 	}
-	
+
 	//残高を返すメソッド　失敗しているときはどうしようか→ここでパースしてエラー判定するとか
 	public int getBalanceOfCard(){
 		return balanceOfCard;
@@ -199,7 +199,7 @@ public class SmartCardAccess {
 	public String getIDm(){
 		return idm;
 	}
-	
+
 	public SmartCardHistory[] getHistoryOfCard(){
 		SmartCardHistory[] smartCardHistoryArr = new SmartCardHistory[5];
 		for(int i=0; i<5; i++){
@@ -212,10 +212,10 @@ public class SmartCardAccess {
 		return smartCardHistoryArr;
 
 	}
-	
+
 	class SmartCardAccessException extends Exception{
 		/**
-		 * 
+		 *
 		 */
 		private static final long serialVersionUID = 1830905568437117662L;
 
