@@ -1,5 +1,7 @@
 package jp.nbus.dto;
 
+import java.util.ArrayList;
+
 /**
  * 時刻表Dto
  *
@@ -10,39 +12,37 @@ public class TimetableDto {
 	/**
 	 * 乗車時刻
 	 */
-	public int fmtime;
+	public int fmTime;
 	/**
 	 * 降車時刻
 	 */
-	public int totime;
+	public int toTime;
 	/**
 	 * 経由
 	 */
 	public String via;
 	/**
-	 * 詳細
-	 */
-	public String detail;
-
-	public String fmName;
-	public String toName;
-	/**
 	 * 目的地
 	 */
 	public String destination;
+	/**
+	 * 方向
+	 */
+	public String direction;
+	/**
+	 * 詳細
+	 */
+	public DetailDto detail;
+
 
 	public TimetableDto() {
 	}
 
-	public TimetableDto(int fmtime, int totime, String via, String detail,
+	public TimetableDto(int fmtime, int totime, String via,
 			String arr, String dep, String destination) {
-		this.fmtime = fmtime;
-		this.totime = totime;
+		this.fmTime = fmtime;
+		this.toTime = totime;
 		this.via = via;
-		this.detail = detail;
-		// Ash用拡張
-		this.fmName = arr;
-		this.toName = dep;
 		this.destination = destination;
 	}
 
@@ -66,14 +66,14 @@ public class TimetableDto {
 	 * @return
 	 */
 	public String getFmTime(){
-		return getTime(this.fmtime);
+		return getTime(this.fmTime);
 	}
 	/**
 	 * 降車時刻を時刻表記で取得
 	 * @return
 	 */
 	public String getToTime(){
-		return getTime(this.totime);
+		return getTime(this.toTime);
 	}
 
 }

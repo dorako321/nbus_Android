@@ -105,15 +105,15 @@ public class SearchForm extends Activity {
 		int textFormWidth = (int) ((int)ParentSearch.disp_width * 0.7);
 		fmForm = prepareTextForm(R.id.edit_geton, textFormWidth, "例：長崎駅前", 1);
 		// もし一度入力したあとにもう一度この画面に戻ってきてたら前回入力データを入力
-		if (!TextUtils.isEmpty(ParentSearch.fmName)) {
-			fmForm.setText(ParentSearch.fmName);
+		if (!TextUtils.isEmpty(ParentSearch.fmFormName)) {
+			fmForm.setText(ParentSearch.fmFormName);
 		}
 
 		// 降車停留所入力欄
 		toForm = prepareTextForm(R.id.edit_getoff, textFormWidth, "例：昭和町", 1);
 		// もし一度入力したあとにもう一度この画面に戻ってきてたら前回入力データを入力
-		if (!TextUtils.isEmpty(ParentSearch.toName)) {
-			toForm.setText(ParentSearch.toName);
+		if (!TextUtils.isEmpty(ParentSearch.toFormName)) {
+			toForm.setText(ParentSearch.toFormName);
 		}
 
 
@@ -139,18 +139,18 @@ public class SearchForm extends Activity {
 			public void onClick(View view) {
 				ParentSearch.result_all = false; // 結果表示画面では全表示ではなく現在時刻からの時刻表表示モードにしとく
 				// 乗車停留所
-				ParentSearch.fmName = trimSpace(fmForm.getText().toString());
+				ParentSearch.fmFormName = trimSpace(fmForm.getText().toString());
 				// 降車停留所
-				ParentSearch.toName = trimSpace(toForm.getText().toString());
+				ParentSearch.toFormName = trimSpace(toForm.getText().toString());
 
-				if (TextUtils.isEmpty(ParentSearch.fmName)) {
+				if (TextUtils.isEmpty(ParentSearch.fmFormName)) {
 					// 乗車停留所が未入力
 					Toast.makeText(getApplicationContext(), "乗車停留所を入力してください。",
 							Toast.LENGTH_SHORT).show();
 					return;
 				}
 
-				if (TextUtils.isEmpty(ParentSearch.toName)) {
+				if (TextUtils.isEmpty(ParentSearch.toFormName)) {
 					// 降車停留所が未入力
 					Toast.makeText(getApplicationContext(), "降車停留所を入力してください。",
 							Toast.LENGTH_SHORT).show();
@@ -158,8 +158,8 @@ public class SearchForm extends Activity {
 				}
 
 				// どっちも入力してる
-				ParentSearch.route = ParentSearch.fmName + "→"
-						+ ParentSearch.toName;
+				ParentSearch.route = ParentSearch.fmFormName + "→"
+						+ ParentSearch.toFormName;
 				// ソフトウェアキーボードを閉じる
 				closeSoftwareKeyboard(view);
 				// APIを使ってデータ取得
@@ -238,8 +238,8 @@ public class SearchForm extends Activity {
 			HttpClient httpClient = new DefaultHttpClient();
 			// URLを生成
 			StringBuilder uri = new StringBuilder("http://nbus.jp/ng.php?fm="
-					+ ParentSearch.fmName + "&to="
-					+ ParentSearch.toName);
+					+ ParentSearch.fmFormName + "&to="
+					+ ParentSearch.toFormName);
 
 			HttpGet request = new HttpGet(uri.toString());
 			HttpResponse httpResponse = null;
@@ -271,13 +271,13 @@ public class SearchForm extends Activity {
 				try {
 					pathDto = mapper.readValue(str_json, new TypeReference<ArrayList<PathDto>>() {});
 				} catch (JsonParseException e) {
-					Log.d("Child1_search", "JsonParseException");
+					Log.d("SearchForm", "JsonParseException");
 					e.printStackTrace();
 				} catch (JsonMappingException e) {
-					Log.d("Child1_search", "JsonMappingException");
+					Log.d("SearchForm", "JsonMappingException");
 					e.printStackTrace();
 				} catch (IOException e) {
-					Log.d("Child1_search", "IOException");
+					Log.d("SearchForm", "IOException");
 					e.printStackTrace();
 				}
 				ParentSearch.path = pathDto;

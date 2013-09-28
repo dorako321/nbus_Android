@@ -3,6 +3,8 @@ package jp.nbus;
 import jp.nbus.R;
 import jp.nbus.R.id;
 import jp.nbus.R.layout;
+import jp.nbus.dto.DetailDto;
+import jp.nbus.dto.TimetableDto;
 import android.app.Activity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -91,49 +93,34 @@ public class SearchDetail extends Activity{
 
 	//詳細のEditTextに表示するテキストの生成
 	public String makeDetail(){
+		TimetableDto timetable = ParentSearch.timetableHolder.timetable.get(ParentSearch.detail_selected_item);
 		String route = ParentSearch.route;	//経路
-		String detail = ParentSearch.timetables[ParentSearch.detail_selected_item].detail;//詳細
-		String str_via = ParentSearch.timetables[ParentSearch.detail_selected_item].via;	//経由地
-		int time = ParentSearch.timetables[ParentSearch.detail_selected_item].fmtime;	//出発時刻
-		int hour = time/60;
-		int minute = time%60;
-		String str_arr_time;	//出発時刻
-		if(minute <10){
-			str_arr_time = String.valueOf(hour)+":0"+String.valueOf(minute);
-		}else{
-			str_arr_time = String.valueOf(hour)+":"+String.valueOf(minute);
-		}
-		time = ParentSearch.timetables[ParentSearch.detail_selected_item].totime;
-		hour = time/60;
-		minute = time%60;
-		String str_dep_time;	//到着時刻
-		if(minute < 10){
-			str_dep_time = "→"+String.valueOf(hour)+":0"+String.valueOf(minute)+"\n";
-		}else{
-			str_dep_time = "→"+String.valueOf(hour)+":"+String.valueOf(minute)+"\n";
-		}
-		//detailから運賃の部分を抽出
-		char[] detail_array = detail.toCharArray();
-		String str_fare = "";	//料金
-		Boolean n = false;
-		for(int i=0; i<detail_array.length; i++){
-			if(n){
-				str_fare = str_fare + detail_array[i];
-			}
-			if(detail_array[i] == '賃'){
-				n = true;
-			}
-		}
-		str_fare = "料金:" + str_fare.substring(1, str_fare.length());
+		DetailDto detail = timetable.detail;//詳細
+		String fmTime = timetable.getFmTime();	//出発時刻
+		String toTime = timetable.getToTime();	//出発時刻
 
-		String detail_text = "";	//完成形の詳細
-        if(TextUtils.isEmpty(str_via)){	//経由地が空だったら項目に含めない
-    		detail_text = route+"\n"+str_arr_time+str_dep_time+str_fare;
-        }else{
-    		detail_text = route+"\n"+str_arr_time+str_dep_time+"経由地:"+str_via+"\n"+str_fare;
-        }
 
-		return detail_text;
+		StringBuilder detailText = new StringBuilder();	//完成形の詳細
+		// 経由地が空だったら項目に含めない
+		detailText.append(route + "\n");
+		detailText.append(fmTime + "→" + toTime + "\n");
+		if (!TextUtils.isEmpty(timetable.via)) {
+			detailText.append("経由地：" + timetable.via + "\n");
+		}
+		if (!TextUtils.isEmpty(timetable.destination)) {
+			detailText.append("目的地：" + timetable.destination + "\n");
+		}
+		if (!TextUtils.isEmpty(timetable.direction)) {
+			detailText.append("方向　：" + timetable.direction + "\n");
+		}
+		if (!TextUtils.isEmpty(detail.bill)) {
+			detailText.append("料金　：" + detail.bill + "円\n");
+		}
+		if (!TextUtils.isEmpty(detail.transitTime)) {
+			detailText.append("時間　：" + detail.transitTime + "分\n");
+		}
+
+		return detailText.toString();
 	}
 
 	@Override

@@ -1,21 +1,23 @@
 package jp.nbus;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 import jp.nbus.R;
-import jp.nbus.R.drawable;
-import jp.nbus.R.id;
-import jp.nbus.R.layout;
 import jp.nbus.dto.TimetableDto;
+import jp.nbus.dto.TimetableHolderDto;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -42,6 +44,10 @@ import android.widget.Toast;
 public class SearchResult extends Activity {
 
 	private ArrayAdapter<String> adapter;
+	/**
+	 * 時刻表情報DTO
+	 */
+	public TimetableHolderDto timetableHolderDto;
 	/**
 	 * 通信中ダイアログ
 	 */
@@ -252,26 +258,30 @@ public class SearchResult extends Activity {
 		ParentSearch.result_time_position = 0;
 		// 現在時刻
 		int intTime = getIntTIme();
-		if (all) { // すべて表示する時
-			for (int i = 0; i < ParentSearch.timetables.length; i++) {
-				adapter.add(" " + ParentSearch.timetables[i].getFmTime()
-						+ " → " + ParentSearch.timetables[i].getToTime());
+		int i = 0;
+		isEndBus = false;
+		for(TimetableDto timetable : ParentSearch.timetableHolder.timetable){
+			if(all){
+				//全て表示
+				adapter.add(" " + timetable.getFmTime()
+						+ " → " + timetable.getToTime());
+
+			}else if(timetable.fmTime > intTime){
+				//現在時刻以降を表示
+				adapter.add(" " + timetable.getFmTime()
+						+ " → " + timetable.getToTime());
+			}else{
+				// 現在時刻より前で何回iが回ったか+1
+				ParentSearch.result_time_position = i + 1;
 			}
-		} else { // 現在時刻から表示する時
-			isEndBus = false; // もう今日のバスが終わっているか？終わってないことにしておく、要素をあとで数えて判断
-			for (int i = 0; i < ParentSearch.timetables.length; i++) {
-				if (ParentSearch.timetables[i].fmtime > intTime) { // 現在時刻以降のデータなら
-					adapter.add(" " + ParentSearch.timetables[i].getFmTime()
-							+ " → " + ParentSearch.timetables[i].getToTime());
-				} else { // 現在時刻より前で何回iが回ったか+1
-					ParentSearch.result_time_position = i + 1;
-				}
-			}
-			if (adapter.getCount() == 0) { // 要素が無い時(最終が終わっている時)
-				isEndBus = true;
-				adapter.add("  選択された経路での本日の運行は終了しました。");
-			}
+			i++;
 		}
+
+        if(adapter.getCount()==0){	//要素が無い時(最終が終わっている時)
+        	isEndBus = true;
+        	adapter.add("  選択された経路での本日の運行は終了しました。");
+        }
+
 		listview.setAdapter(adapter);
 		listview.invalidateViews();
 	}
@@ -336,17 +346,15 @@ public class SearchResult extends Activity {
 	private class Progress implements Runnable {
 		public void run() {
 
-			String str_json = ""; // 通信して取得したJSONな文字列、後でJSONObjectに変換される
-			JSONObject rootObject;
-			JSONArray json_timetables;
-
+			String strJson = null; // 通信して取得したJSONな文字列、後でJSONObjectに変換される
 			HttpClient httpClient = new DefaultHttpClient();
 
 			// URLを生成
 			StringBuilder uri = new StringBuilder("http://nbus.jp/ttm.php?fm="
 					+ ParentSearch.geton_id + "&to=" + ParentSearch.getoff_id
 					+ "&wk=" + String.valueOf(ParentSearch.result_week)
-					+ "&co=" + String.valueOf(ParentSearch.company_id));
+					+ "&co=" + String.valueOf(ParentSearch.company_id)
+					+ "&v=cacao");
 
 			HttpGet request = new HttpGet(uri.toString());
 			HttpResponse httpResponse = null;
@@ -367,75 +375,33 @@ public class SearchResult extends Activity {
 				try {
 					ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 					httpResponse.getEntity().writeTo(outputStream);
-					str_json = outputStream.toString(); // JSONデータ
+					strJson = outputStream.toString(); // JSONデータ
 
-					// 取得したJSONな文字列の先頭3文字(3バイト)をスキップして保存し直す
-					// BOMをスキップしたいので
-					// str_json = str_json.substring(3, str_json.length());
 
 				} catch (Exception e) {
 					Log.d("Child1_result", "error_httpResponse");
 				}
 
-				// 文字列からJSONObjectに変換
+                //マッピング
+				ObjectMapper mapper = new ObjectMapper();
 				try {
-					rootObject = new JSONObject(str_json);
-					json_error = rootObject.getInt("error"); // エラー起きてないか取得
-					if (json_error == 0) { // エラー無し
-						json_timetables = rootObject.getJSONArray("timetable");
-
-						int lenght = json_timetables.length();
-						ParentSearch.timetables = new TimetableDto[lenght]; // JSONArrayのサイズで配列を作り直す
-						// 構造体っぽいクラスにJSONObject
-						// Parent1.json_timetablesからデータを格納していく
-
-						for (int i = 0; i < lenght; i++) {
-							JSONObject time = json_timetables.getJSONObject(i);
-							String via = null;
-							try { // JSONObjectから各項目を取得
-								if (time.has("via")) {
-									via = time.getString("via");
-								} else {
-									via = " ";// 経由地がない場合のエラー回避
-								}
-								ParentSearch.timetables[i] = new TimetableDto(
-										time.getInt("arr_time"),
-										time.getInt("dep_time"), via,
-										time.getString("detail"),
-										time.getString("arr"),
-										time.getString("dep"),
-										time.getString("destination"));
-							} catch (JSONException e) { // 経由地が無くてエラーが出た場合はこっちでキャッチ
-								/*
-								 * Parent1.timetables[i] = new
-								 * Timetable(time.getInt("arr_time"),
-								 * time.getInt("dep_time"), "", //viaの文字列を空に
-								 * time.getString("detail"));
-								 */
-								e.printStackTrace();
-								Log.d("Child1_result",
-										"error_timeTableJSONObject");
-							}
-
-						}
-						JSONObject from = rootObject.getJSONObject("fm");
-						ParentSearch.result_geton_name = from.getString("name");
-						ParentSearch.result_geton_ruby = from.getString("ruby");
-						JSONObject to = rootObject.getJSONObject("to");
-						ParentSearch.result_getoff_name = to.getString("name");
-						ParentSearch.result_getoff_ruby = to.getString("ruby");
-
-					} else { // エラー有り
-						json_error_reason = rootObject
-								.getString("error_reason");
-						// Log.e(String.valueOf(Parent1.json_error_id),
-						// Parent1.json_error_reason);
-					}
-
-				} catch (JSONException e) {
+					timetableHolderDto = mapper.readValue(strJson, TimetableHolderDto.class);
+				} catch (JsonParseException e) {
+					Log.d("Child1_search", "JsonParseException");
 					e.printStackTrace();
-					Log.d("Child1_result", "error_JSONObject");
+				} catch (JsonMappingException e) {
+					Log.d("Child1_search", "JsonMappingException");
+					e.printStackTrace();
+				} catch (IOException e) {
+					Log.d("Child1_search", "IOException");
+					e.printStackTrace();
 				}
+				ParentSearch.timetableHolder = timetableHolderDto;
+            	ParentSearch.fmName = timetableHolderDto.fm.name;
+            	ParentSearch.fmRuby = timetableHolderDto.fm.ruby;
+            	ParentSearch.toName = timetableHolderDto.to.name;
+            	ParentSearch.toRuby = timetableHolderDto.to.ruby;
+
 			} else {
 				Log.d("Child1_result", "Status" + status);
 				// return; returnすると繋がるまで何回でも繰り返してダイアログが終わらない
@@ -492,10 +458,10 @@ public class SearchResult extends Activity {
 		}
 
 		dbAccess.addFavorite(ParentSearch.geton_id,
-				ParentSearch.result_geton_name, ParentSearch.result_geton_ruby,
+				ParentSearch.fmName, ParentSearch.fmRuby,
 				ParentSearch.getoff_id, ParentSearch.toName,
-				ParentSearch.result_getoff_ruby, ParentSearch.company_id,
-				ParentSearch.company_name);
+				ParentSearch.toRuby, ParentSearch.company_id,
+				ParentSearch.companyName);
 		Toast.makeText(getApplicationContext(), "お気に入りに登録しました。",
 				Toast.LENGTH_SHORT).show();
 	}

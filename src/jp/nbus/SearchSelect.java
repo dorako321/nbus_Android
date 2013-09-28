@@ -9,6 +9,7 @@ import jp.nbus.R;
 import jp.nbus.dto.BusStopDto;
 import jp.nbus.dto.PathDto;
 import jp.nbus.dto.TimetableDto;
+import jp.nbus.dto.TimetableHolderDto;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -44,7 +45,14 @@ import android.widget.Toast;
 
 public class SearchSelect extends Activity {
 	private ArrayAdapter<String> adapter;
-	private ProgressDialog dialog;	//通信中ダイアログ
+	/**
+	 * 時刻表情報DTO
+	 */
+	public TimetableHolderDto timetableHolderDto;
+	/**
+	 * 通信中のダイアログ
+	 */
+	private ProgressDialog dialog;
 	private ListView listview;
 	private TextView title;
 
@@ -89,7 +97,7 @@ public class SearchSelect extends Activity {
 					// クリックされたアイテムを取得します
 					PathDto path = ParentSearch.path.get(position);
 					ParentSearch.company_id = path.co;
-					ParentSearch.company_name = path.co_name;
+					ParentSearch.companyName = path.co_name;
 					ParentSearch.geton_id = path.fm.id;
 					ParentSearch.getoff_id = path.to.id;
 					// result_weekは別途設定済み
@@ -209,18 +217,20 @@ public class SearchSelect extends Activity {
 	public class Progress implements Runnable {
         public void run() {
 
-        	String str_json = "";	//通信して取得したJSONな文字列、後でJSONObjectに変換される
-        	JSONObject rootObject;
-        	JSONArray json_timetables;
-
+        	String strJson = null;	//通信して取得したJSONな文字列、後でJSONObjectに変換される
         	HttpClient httpClient = new DefaultHttpClient();
 
     		//URLを生成
-            StringBuilder uri = new StringBuilder("http://nbus.jp/ttm.php?fm="
-            										+ParentSearch.geton_id+"&to="
-            										+ParentSearch.getoff_id+"&wk="
-            										+String.valueOf(ParentSearch.result_week)+"&co="
-            										+String.valueOf(ParentSearch.company_id));
+            StringBuilder uri = new StringBuilder("http://nbus.jp/ttm.php?fm=");
+            uri.append(ParentSearch.geton_id);
+            uri.append("&to=");
+            uri.append(ParentSearch.getoff_id);
+            uri.append("&wk=");
+            uri.append(String.valueOf(ParentSearch.result_week));
+            uri.append("&co=");
+            uri.append(String.valueOf(ParentSearch.company_id));
+            uri.append("&v=cacao");
+
 
             HttpGet request = new HttpGet(uri.toString());
             HttpResponse httpResponse = null;
@@ -243,68 +253,33 @@ public class SearchSelect extends Activity {
                 try {
                     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                     httpResponse.getEntity().writeTo(outputStream);
-                    str_json = outputStream.toString(); // JSONデータ
+                    strJson = outputStream.toString(); // JSONデータ
 
                 } catch (Exception e) {
                       Log.d("Child1_result", "error_httpResponse");
                 }
 
 
-
-
-                //文字列からJSONObjectに変換
-                try {
-					rootObject = new JSONObject(str_json);
-	                json_error = rootObject.getInt("error");	//エラー起きてないか取得
-	                if(json_error == 0){	//エラー無し
-	                	json_timetables = rootObject.getJSONArray("timetable");
-
-	                	int lenght = json_timetables.length();
-	                	ParentSearch.timetables = new TimetableDto[lenght];	//JSONArrayのサイズで配列を作り直す
-	                	//構造体っぽいクラスにJSONObject Parent1.json_timetablesからデータを格納していく
-
-	                	for(int i=0; i<lenght; i++){
-	                		JSONObject time = json_timetables.getJSONObject(i);
-	                		String via = null;
-	                		try{	//JSONObjectから各項目を取得
-	                			if(time.has("via")){
-	                				via = time.getString("via");
-	                			}else{
-	                				via = " ";//経由地がない場合のエラー回避
-	                			}
-		                		ParentSearch.timetables[i] = new TimetableDto(time.getInt("arr_time"),
-										time.getInt("dep_time"),
-										via,
-										time.getString("detail"),
-										time.getString("arr"),
-										time.getString("dep"),
-										time.getString("destination"));
-	                		}catch(JSONException e){	//経由地が無くてエラーが出た場合はこっちでキャッチ
-		                		/*Parent1.timetables[i] = new Timetable(time.getInt("arr_time"),
-										time.getInt("dep_time"),
-										"",	//viaの文字列を空に
-										time.getString("detail"));*/
-	                			e.printStackTrace();
-	        					Log.d("Child1_result", "error_timeTableJSONObject");
-	                		}
-
-	                	}
-	                	JSONObject from = rootObject.getJSONObject("fm");
-	                	ParentSearch.result_geton_name = from.getString("name");
-	                	ParentSearch.result_geton_ruby = from.getString("ruby");
-	                	JSONObject to = rootObject.getJSONObject("to");
-	                	ParentSearch.result_getoff_name = to.getString("name");
-	                	ParentSearch.result_getoff_ruby = to.getString("ruby");
-
-	                }else{	//エラー有り
-	                	json_error_reason = rootObject.getString("error_reason");
-	                	//Log.e(String.valueOf(Parent1.json_error_id), Parent1.json_error_reason);
-	                }
-
-				} catch (JSONException e) {
+                //マッピング
+				ObjectMapper mapper = new ObjectMapper();
+				try {
+					timetableHolderDto = mapper.readValue(strJson, TimetableHolderDto.class);
+				} catch (JsonParseException e) {
+					Log.d("Child1_search", "JsonParseException");
 					e.printStackTrace();
-					Log.d("Child1_result", "error_JSONObject");
+				} catch (JsonMappingException e) {
+					Log.d("Child1_search", "JsonMappingException");
+					e.printStackTrace();
+				} catch (IOException e) {
+					Log.d("Child1_search", "IOException");
+					e.printStackTrace();
 				}
+				ParentSearch.timetableHolder = timetableHolderDto;
+            	ParentSearch.fmName = timetableHolderDto.fm.name;
+            	ParentSearch.fmRuby = timetableHolderDto.fm.ruby;
+            	ParentSearch.toName = timetableHolderDto.to.name;
+            	ParentSearch.toRuby = timetableHolderDto.to.ruby;
+
             } else {
                 Log.d("Child1_result", "Status" + status);
                 //return;	returnすると繋がるまで何回でも繰り返してダイアログが終わらない

@@ -9,6 +9,7 @@ import jp.nbus.dto.BusStopDto;
 import jp.nbus.dto.FavoriteRoutesAshDto;
 import jp.nbus.dto.PathDto;
 import jp.nbus.dto.TimetableDto;
+import jp.nbus.dto.TimetableHolderDto;
 
 
 import org.apache.http.HttpResponse;
@@ -48,7 +49,10 @@ import android.widget.Toast;
 public class FavoriteForm extends Activity{
 
 	private ListView listview;
-
+	/**
+	 * 時刻表情報DTO
+	 */
+	public TimetableHolderDto timetableHolderDto;
 	/**
 	 * 経路情報DTO
 	 */
@@ -108,8 +112,8 @@ public class FavoriteForm extends Activity{
             		if (ParentSearch.favoriteroutes[position].isSearchFavorite) {
 						//停留所名のみ保持されているとき
             			//Child1_selectに遷移
-            			ParentSearch.fmName = ParentSearch.favoriteroutes[position].fm_name;
-            			ParentSearch.toName = ParentSearch.favoriteroutes[position].to_name;
+            			ParentSearch.fmFormName = ParentSearch.favoriteroutes[position].fm_name;
+            			ParentSearch.toFormName = ParentSearch.favoriteroutes[position].to_name;
 
             			send_neighbor();
 					} else {
@@ -118,9 +122,9 @@ public class FavoriteForm extends Activity{
 	            		ParentSearch.geton_id = ParentSearch.favoriteroutes[position].fm_id;
 	            		ParentSearch.getoff_id = ParentSearch.favoriteroutes[position].to_id;
 	            		ParentSearch.company_id = ParentSearch.favoriteroutes[position].co;
-            			ParentSearch.fmName = ParentSearch.favoriteroutes[position].fm_name;
-            			ParentSearch.toName = ParentSearch.favoriteroutes[position].to_name;
-	            		ParentSearch.route = ParentSearch.fmName+"→"+ParentSearch.toName;	//タイトルバー用経路文字列
+            			ParentSearch.fmFormName = ParentSearch.favoriteroutes[position].fm_name;
+            			ParentSearch.toFormName = ParentSearch.favoriteroutes[position].to_name;
+	            		ParentSearch.route = ParentSearch.fmFormName+"→"+ParentSearch.toFormName;	//タイトルバー用経路文字列
 	            		ParentSearch.result_all = false;
 	            		Calendar calendar = Calendar.getInstance();
 	            		int week = calendar.get(Calendar.DAY_OF_WEEK)-1;	//曜日取得
@@ -174,12 +178,7 @@ public class FavoriteForm extends Activity{
 	public void make_adapter(){
 		//アダプタを初期化
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.row, R.id.row_textview1);
-		/*
-		//SharedPreferencesから情報を読み込む
-        SharedPreferences sharedpreference = getSharedPreferences("Nbus_Android", Activity.MODE_PRIVATE);
-        favorite_sum = sharedpreference.getInt("DataSum", 0);	//データ数を取得
-        String str_json = "";
-        */
+
 
 		FavoriteDBAccess dbAccess = new FavoriteDBAccess(this);
 		ParentSearch.favoriteroutes = dbAccess.readFavorites();
@@ -204,129 +203,7 @@ public class FavoriteForm extends Activity{
         listview.setAdapter(adapter);
 	}
 
-	public void send_url(){
-		Calendar calendar = Calendar.getInstance();
-		int week = calendar.get(Calendar.DAY_OF_WEEK)-1;	//曜日取得
-		if(week==0){	//日曜
-			ParentSearch.result_week = 2;
-		}else if(week==6){	//土曜
-			ParentSearch.result_week = 1;
-		}else{	//平日
-			ParentSearch.result_week = 0;
-		}
 
-		//-----[ダイアログの設定]
-        dialog = new ProgressDialog(getParent());	//通常はnew ProgressDialog(this)だがタブ内なのでgetParent()
-        dialog.setTitle("通信中");
-        dialog.setMessage("時刻表取得中");
-        dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        dialog.show();
-
-        //-----[ローディングの描画は別スレッドで行う]
-        Thread thread = new Thread(new Progress());
-        thread.start();
-	}
-
-	//ダイアログが出てる間に通信
-	private class Progress implements Runnable {
-        public void run() {
-
-        	String str_json = "";	//通信して取得したJSONな文字列、後でJSONObjectに変換される
-        	JSONObject rootObject;
-        	JSONArray json_timetables;
-
-        	HttpClient httpClient = new DefaultHttpClient();
-
-    		//URLを生成
-            StringBuilder uri = new StringBuilder("http://nbus.jp/path_maker.php?from="
-            										+ParentSearch.fmName+"&to="
-            										+ParentSearch.toName+"&week="
-            										+String.valueOf(ParentSearch.result_week));
-
-            HttpGet request = new HttpGet(uri.toString());
-            HttpResponse httpResponse = null;
-
-            int status = -1;
-
-            try {
-                httpResponse = httpClient.execute(request);
-                status = httpResponse.getStatusLine().getStatusCode();
-            } catch (Exception e) {
-                Log.d("Child2_bookmark", "network_error");
-                net_error = true;
-                error_message = "Error:ネットワークに接続できません。";
-                //return;	returnすると繋がるまで何回でも繰り返してダイアログが終わらない
-            }
-
-            if (HttpStatus.SC_OK == status) {
-                try {
-                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                    httpResponse.getEntity().writeTo(outputStream);
-                    str_json = outputStream.toString(); // JSONデータ
-
-                    //取得したJSONな文字列の先頭3文字(3バイト)をスキップして保存し直す
-                    //BOMをスキップしたいので
-                    //str_json = str_json.substring(3, str_json.length());
-
-                } catch (Exception e) {
-                      Log.d("Child2_bookmark", "error_httpResponse");
-                }
-
-
-                //文字列からJSONObjectに変換
-                try {
-					rootObject = new JSONObject(str_json);
-	                json_error = rootObject.getInt("error");	//エラー起きてないか取得
-	                if(json_error == 0){	//エラー無し
-	                	json_timetables = rootObject.getJSONArray("timetable");
-
-	                	int lenght = json_timetables.length();
-	                	ParentSearch.timetables = new TimetableDto[lenght];	//JSONArrayのサイズで配列を作り直す
-	                	//構造体っぽいクラスにJSONObject Parent1.json_timetablesからデータを格納していく
-	                	for(int i=0; i<lenght; i++){
-	                		JSONObject time = json_timetables.getJSONObject(i);
-	                		String via = null;
-	                		try{	//JSONObjectから各項目を取得
-	                			if(time.has("via")){
-	                				via = time.getString("via");
-	                			}else{
-	                				via = " ";//経由地がない場合のエラー回避
-	                			}
-		                		ParentSearch.timetables[i] = new TimetableDto(time.getInt("arr_time"),
-										time.getInt("dep_time"),
-										via,
-										time.getString("detail"),
-										time.getString("arr"),
-										time.getString("dep"),
-										time.getString("destination"));
-	                		}catch(JSONException e){	//経由地が無くてエラーが出た場合はこっちでキャッチ
-		                		/*Parent1.timetables[i] = new Timetable(time.getInt("arr_time"),
-										time.getInt("dep_time"),
-										"",	//viaの文字列を空に
-										time.getString("detail"));*/
-	                			e.printStackTrace();
-	        					Log.d("Child1_result", "error_timeTableJSONObject");
-	                		}
-
-	                	}
-	                }else{	//エラー有り
-	                	json_error_reason = rootObject.getString("error_reason");
-	                	//Log.e(String.valueOf(Parent1.json_error_id), Parent1.json_error_reason);
-	                }
-
-				} catch (JSONException e) {
-					e.printStackTrace();
-					Log.d("Child2_bookmark", "error_JSONObject");
-				}
-            } else {
-                Log.d("Child2_bookmark", "Status" + status);
-                //return;	returnすると繋がるまで何回でも繰り返してダイアログが終わらない
-            }
-
-            //-----[読み込み終了の通知]
-            handler.sendEmptyMessage(0);
-        }
-    }
 
 	//通信終了後に呼ばれる
     private Handler handler = new Handler() {
@@ -387,7 +264,7 @@ public class FavoriteForm extends Activity{
 			HttpClient httpClient = new DefaultHttpClient();
 			// URLを生成
 			StringBuilder uri = new StringBuilder("http://nbus.jp/ng.php?fm="
-					+ ParentSearch.fmName + "&to=" + ParentSearch.toName);
+					+ ParentSearch.fmFormName + "&to=" + ParentSearch.toFormName);
 
 			HttpGet request = new HttpGet(uri.toString());
 			HttpResponse httpResponse = null;
@@ -428,6 +305,7 @@ public class FavoriteForm extends Activity{
 					e.printStackTrace();
 				}
 				ParentSearch.path = pathDto;
+
 			} else {
 				// Log.d("Child1_search", "Status" + status);
 				// return; returnすると繋がるまで何回でも繰り返してダイアログが終わらない
@@ -494,10 +372,7 @@ public class FavoriteForm extends Activity{
 	public class AshTtmProgress implements Runnable {
         public void run() {
 
-        	String str_json = "";	//通信して取得したJSONな文字列、後でJSONObjectに変換される
-        	JSONObject rootObject;
-        	JSONArray json_timetables;
-
+        	String strJson = "";	//通信して取得したJSONな文字列、後でJSONObjectに変換される
         	HttpClient httpClient = new DefaultHttpClient();
 
     		//URLを生成
@@ -505,7 +380,8 @@ public class FavoriteForm extends Activity{
             										+ParentSearch.geton_id+"&to="
             										+ParentSearch.getoff_id+"&wk="
             										+String.valueOf(ParentSearch.result_week)+"&co="
-            										+String.valueOf(ParentSearch.company_id));
+            										+String.valueOf(ParentSearch.company_id)
+            										+"&v=cacao");
 
             HttpGet request = new HttpGet(uri.toString());
             HttpResponse httpResponse = null;
@@ -528,70 +404,32 @@ public class FavoriteForm extends Activity{
                 try {
                     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                     httpResponse.getEntity().writeTo(outputStream);
-                    str_json = outputStream.toString(); // JSONデータ
-
-                    //取得したJSONな文字列の先頭3文字(3バイト)をスキップして保存し直す
-                    //BOMをスキップしたいので
-                    //str_json = str_json.substring(3, str_json.length());
+                    strJson = outputStream.toString(); // JSONデータ
 
                 } catch (Exception e) {
                       Log.d("Child1_result", "error_httpResponse");
                 }
 
-
-                //文字列からJSONObjectに変換
-                try {
-					rootObject = new JSONObject(str_json);
-	                json_error = rootObject.getInt("error");	//エラー起きてないか取得
-	                if(json_error == 0){	//エラー無し
-	                	json_timetables = rootObject.getJSONArray("timetable");
-
-	                	int lenght = json_timetables.length();
-	                	ParentSearch.timetables = new TimetableDto[lenght];	//JSONArrayのサイズで配列を作り直す
-	                	//構造体っぽいクラスにJSONObject Parent1.json_timetablesからデータを格納していく
-
-	                	for(int i=0; i<lenght; i++){
-	                		JSONObject time = json_timetables.getJSONObject(i);
-	                		String via = null;
-	                		try{	//JSONObjectから各項目を取得
-	                			if(time.has("via")){
-	                				via = time.getString("via");
-	                			}else{
-	                				via = " ";//経由地がない場合のエラー回避
-	                			}
-		                		ParentSearch.timetables[i] = new TimetableDto(time.getInt("arr_time"),
-										time.getInt("dep_time"),
-										via,
-										time.getString("detail"),
-										time.getString("arr"),
-										time.getString("dep"),
-										time.getString("destination"));
-	                		}catch(JSONException e){	//経由地が無くてエラーが出た場合はこっちでキャッチ
-		                		/*Parent1.timetables[i] = new Timetable(time.getInt("arr_time"),
-										time.getInt("dep_time"),
-										"",	//viaの文字列を空に
-										time.getString("detail"));*/
-	                			e.printStackTrace();
-	        					Log.d("Child1_result", "error_timeTableJSONObject");
-	                		}
-
-	                	}
-	                	JSONObject from = rootObject.getJSONObject("fm");
-	                	ParentSearch.result_geton_name = from.getString("name");
-	                	ParentSearch.result_geton_ruby = from.getString("ruby");
-	                	JSONObject to = rootObject.getJSONObject("to");
-	                	ParentSearch.result_getoff_name = to.getString("name");
-	                	ParentSearch.result_getoff_ruby = to.getString("ruby");
-
-	                }else{	//エラー有り
-	                	json_error_reason = rootObject.getString("error_reason");
-	                	//Log.e(String.valueOf(Parent1.json_error_id), Parent1.json_error_reason);
-	                }
-
-				} catch (JSONException e) {
+                //マッピング
+				ObjectMapper mapper = new ObjectMapper();
+				try {
+					timetableHolderDto = mapper.readValue(strJson, TimetableHolderDto.class);
+				} catch (JsonParseException e) {
+					Log.d("Child1_search", "JsonParseException");
 					e.printStackTrace();
-					Log.d("Child1_result", "error_JSONObject");
+				} catch (JsonMappingException e) {
+					Log.d("Child1_search", "JsonMappingException");
+					e.printStackTrace();
+				} catch (IOException e) {
+					Log.d("Child1_search", "IOException");
+					e.printStackTrace();
 				}
+				ParentSearch.timetableHolder = timetableHolderDto;
+            	ParentSearch.fmName = timetableHolderDto.fm.name;
+            	ParentSearch.fmRuby = timetableHolderDto.fm.ruby;
+            	ParentSearch.toName = timetableHolderDto.to.name;
+            	ParentSearch.toRuby = timetableHolderDto.to.ruby;
+
             } else {
                 Log.d("Child1_result", "Status" + status);
                 //return;	returnすると繋がるまで何回でも繰り返してダイアログが終わらない
