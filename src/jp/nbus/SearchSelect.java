@@ -1,10 +1,13 @@
 package jp.nbus;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 
 import jp.nbus.R;
 import jp.nbus.dto.BusStopDto;
+import jp.nbus.dto.PathDto;
 import jp.nbus.dto.TimetableDto;
 
 import org.apache.http.HttpResponse;
@@ -15,6 +18,11 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -47,7 +55,7 @@ public class SearchSelect extends Activity {
 	//nbus.jpから帰って来るエラーについて
 	private int json_error;	//エラー起きてないか
 	private String json_error_reason;	//起きてた場合、理由は何か
-	private Boolean emptyResult = false; //該当する経路がなかった場合
+	private Boolean isEmptyAdapter = false; //該当する経路がなかった場合
 
 	private SmartCardAccess smartCardAccess;
 
@@ -69,26 +77,29 @@ public class SearchSelect extends Activity {
         listview = (ListView)findViewById(R.id.listView1);
         listview.getLayoutParams().height = (int)(ParentSearch.disp_height*0.5);	//リストビューの高さを設定
         listview.requestLayout();											//設定を適用
-        make_adapter();	//アダプタを作ってセット
+        makeAdapter();	//アダプタを作ってセット
 
         //リストのアイテムが選択された時
-        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if(!emptyResult){//ng.phpからの結果が空になっているときはタップしても実行しないようにする
-            	// クリックされたアイテムを取得します
-	                BusStopDto stop = ParentSearch.busstops[position];
-	                ParentSearch.company_id = stop.companyId;
-	                ParentSearch.company_name = stop.companyName;
-	                ParentSearch.geton_id = stop.fmId;
-	                ParentSearch.getoff_id = stop.toId;
-	                //result_weekは別途設定済み
-	                ParentSearch.route = stop.fmName + "→" + stop.toName;//画面遷移先Activityのtitlebarで表示する用のString
+		listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				if (!isEmptyAdapter) {
+					// ng.phpからの結果が空になっているときはタップしても実行しないようにする
+					// クリックされたアイテムを取得します
+					PathDto path = ParentSearch.path.get(position);
+					ParentSearch.company_id = path.co;
+					ParentSearch.company_name = path.co_name;
+					ParentSearch.geton_id = path.fm.id;
+					ParentSearch.getoff_id = path.to.id;
+					// result_weekは別途設定済み
+					// 画面遷移先Activityのtitlebarで表示する用のString
+					ParentSearch.route = path.fm.name + "→" + path.to.name;
 
-	                sendUrl();//リクエストを送る
-                }
-            }
-        });
+					sendUrl();// リクエストを送る
+				}
+			}
+		});
 
         //ttm.phpへのリクエストの際に必要な曜日番号をresult_weekに設定する
 		Calendar calendar = Calendar.getInstance();
@@ -127,7 +138,7 @@ public class SearchSelect extends Activity {
 		title.setText(ParentSearch.route);
 
 		//リストビュー
-        make_adapter();
+        makeAdapter();
 
 		if(Nbus_AndroidActivity.select_bookmark == true){	//ブックマーク選択でタブ切り替えが起きた時は結果表示に飛ばす
 			ParentSearch parentActivity = (ParentSearch)getParent();
@@ -142,37 +153,38 @@ public class SearchSelect extends Activity {
 	}
 
 	//JSONObjectからアダプターにデータを入れる
-	public void make_adapter(){
+	public void makeAdapter(){
 		//アダプタを初期化
         adapter = new ArrayAdapter<String>(this, R.layout.row, R.id.row_textview1);
         ParentSearch.result_time_position = 0;	//選ばれた項目が何番目か
-        emptyResult = false;//空の結果を受けとってないと仮定。実際にはあとでadapterの数から把握する。
+        isEmptyAdapter = false;//空の結果を受けとってないと仮定。実際にはあとでadapterの数から把握する。
 
-    	String fromStopName;
-    	String toStopName;
-    	String companyName;
-        	for(int i=0; i<ParentSearch.busstops.length; i++){
-            	fromStopName = ParentSearch.busstops[i].fmName;
-            	toStopName = ParentSearch.busstops[i].toName;
-        		companyName = ParentSearch.busstops[i].companyName;
-            	adapter.add(" "+fromStopName+"→"+toStopName+" ("+companyName+")");
-            }
-            if(adapter.getCount()==0){	//要素が無い時(経路がないとき)
-            	emptyResult = true;//結果が空である
-            	adapter.add("  指定された経路が見つかりませんでした。");
-            }else if(adapter.getCount()==1){
-            	//一つしかアイテムが設定されていない場合、自動で時刻表検索画面に飛ばす
-                BusStopDto stop = ParentSearch.busstops[0];
-                ParentSearch.company_id = stop.companyId;
-                ParentSearch.geton_id = stop.fmId;
-                ParentSearch.getoff_id = stop.toId;
-                //result_weekはonCreateで別途設定済み…
+		String fmStopName;
+		String toStopName;
+		String companyName;
+		for (PathDto path : ParentSearch.path) {
+			fmStopName = path.fm.name;
+			toStopName = path.to.name;
+			companyName = path.co_name;
+			adapter.add(" " + fmStopName + "→" + toStopName + " ("
+					+ companyName + ")");
+		}
+		if (adapter.getCount() == 0) { // 要素が無い時(経路がないとき)
+			isEmptyAdapter = true;// 結果が空である
+			adapter.add("  指定された経路が見つかりませんでした。");
+		} else if (adapter.getCount() == 1) {
+			// 一つしかアイテムが設定されていない場合、自動で時刻表検索画面に飛ばす
+			PathDto path = ParentSearch.path.get(0);
+			ParentSearch.company_id = path.co;
+			ParentSearch.geton_id = path.fm.id;
+			ParentSearch.getoff_id = path.to.id;
+			// result_weekはonCreateで別途設定済み…
+			// 画面遷移先Activityのtitlebarで表示する用のString
+			ParentSearch.route = path.fm.name + "→" + path.to.name;
 
-                ParentSearch.route = stop.fmName + "→" + stop.toName;//画面遷移先Activityのtitlebarで表示する用のString
+			sendUrl();// リクエストを送る
 
-                sendUrl();//リクエストを送る
-
-            }
+		}
         listview.setAdapter(adapter);
         listview.invalidateViews();
 	}
@@ -233,13 +245,11 @@ public class SearchSelect extends Activity {
                     httpResponse.getEntity().writeTo(outputStream);
                     str_json = outputStream.toString(); // JSONデータ
 
-                    //取得したJSONな文字列の先頭3文字(3バイト)をスキップして保存し直す
-                    //BOMをスキップしたいので
-                    //str_json = str_json.substring(3, str_json.length());
-
                 } catch (Exception e) {
                       Log.d("Child1_result", "error_httpResponse");
                 }
+
+
 
 
                 //文字列からJSONObjectに変換

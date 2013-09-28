@@ -1,12 +1,15 @@
 package jp.nbus;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 
 import jp.nbus.R;
 import jp.nbus.R.array;
 import jp.nbus.R.id;
 import jp.nbus.R.layout;
 import jp.nbus.dto.BusStopDto;
+import jp.nbus.dto.PathDto;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -16,6 +19,11 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -47,6 +55,10 @@ public class SearchForm extends Activity {
 	 * 降車停留所入力欄
 	 */
 	private AutoCompleteTextView toForm;
+	/**
+	 * 経路情報DTO
+	 */
+	ArrayList<PathDto> pathDto;
 
 	private ProgressDialog dialog; // 通信中ダイアログ
 
@@ -198,11 +210,11 @@ public class SearchForm extends Activity {
 		smartCardAccess.enableDetection(this);
 
 	}
-
+	/**
+	 * 停留所名検索メソッド(Ash API対応)
+	 */
 	public void send_neighbor() {
-		/*
-		 * 停留所名検索メソッド(Ash API対応)
-		 */
+
 
 		// -----[ダイアログの設定]
 		dialog = new ProgressDialog(getParent()); // 通常はnew
@@ -250,47 +262,25 @@ public class SearchForm extends Activity {
 					httpResponse.getEntity().writeTo(outputStream);
 					str_json = outputStream.toString(); // JSONデータ
 
-					// 取得したJSONな文字列の先頭3文字(3バイト)をスキップして保存し直す
-					// BOMをスキップしたいので
-					// str_json = str_json.substring(3, str_json.length());
-
 				} catch (Exception e) {
 					Log.d("Child1_search", "error_httpResponse(ng)");
 				}
 
-				// 文字列からJSONObjectに変換
+                //マッピング
+				ObjectMapper mapper = new ObjectMapper();
 				try {
-					JSONArray rootArrayObject = new JSONArray(str_json);
-					// json_error = rootObject.getInt("error"); //エラー起きてないか取得
-					// Ashだとここでerrorがでないようだ
-					// json_timetables = rootObject.getJSONArray("timetable");
-
-					int length = rootArrayObject.length();
-					ParentSearch.busstops = new BusStopDto[length]; // JSONArrayのサイズで配列を作り直す
-					// 構造体っぽいクラスにJSONObject Parent1.json_timetablesからデータを格納していく
-					for (int i = 0; i < length; i++) {
-
-						try {
-							JSONObject stop = rootArrayObject.getJSONObject(i);
-							JSONObject from = stop.getJSONObject("fm");
-							JSONObject to = stop.getJSONObject("to");
-							ParentSearch.busstops[i] = new BusStopDto(
-									stop.getInt("co"),
-									stop.getString("co_name"),
-									from.getInt("id"), from.getString("name"),
-									from.getInt("pos_id"),
-									from.getString("ruby"), to.getInt("id"),
-									to.getString("name"), to.getInt("pos_id"),
-									to.getString("ruby"));
-						} catch (JSONException e) {
-							// TODO 該当するバス停がないときの処理
-						}
-
-					}
-				} catch (JSONException e) {
+					pathDto = mapper.readValue(str_json, new TypeReference<ArrayList<PathDto>>() {});
+				} catch (JsonParseException e) {
+					Log.d("Child1_search", "JsonParseException");
 					e.printStackTrace();
-					Log.d("Child1_search", "error_JSONObject");
+				} catch (JsonMappingException e) {
+					Log.d("Child1_search", "JsonMappingException");
+					e.printStackTrace();
+				} catch (IOException e) {
+					Log.d("Child1_search", "IOException");
+					e.printStackTrace();
 				}
+				ParentSearch.path = pathDto;
 
 			}
 

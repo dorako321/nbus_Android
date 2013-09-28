@@ -1,10 +1,13 @@
 package jp.nbus;
 
+import java.util.ArrayList;
+
 import jp.nbus.R;
 import jp.nbus.R.id;
 import jp.nbus.R.layout;
 import jp.nbus.dto.BusStopDto;
 import jp.nbus.dto.FavoriteRoutesAshDto;
+import jp.nbus.dto.PathDto;
 import jp.nbus.dto.TimetableDto;
 import android.app.ActivityGroup;
 import android.content.Intent;
@@ -22,7 +25,7 @@ public class ParentSearch extends ActivityGroup{
 	static int disp_width = 0;	//画面サイズ
 	static int disp_height = 0;
 	static float dip_scale = 1.5f;
-	
+
 	//旧API用 兼 ng.php問い合わせ用
 	static String fmName = null;	//入力された乗車停留所
 	static String toName = null;	//入力された降車停留所
@@ -30,58 +33,62 @@ public class ParentSearch extends ActivityGroup{
 	static int geton_id = 0;	//入力された乗車停留所
 	static int getoff_id = 0;	//入力された降車停留所
 	static int company_id = 0;
-	
+
 	static TimetableDto[] timetables;	//読み込んだ時刻表をTimetable型で入れとく
-	static BusStopDto[] busstops;
+	//static BusStopDto[] busstops;
+	/**
+	 * 経路情報アクセスDTO
+	 */
+	static ArrayList<PathDto> path;
 	static FavoriteRoutesAshDto[] favoriteroutes;	//SharedPreferencesのJSONデータからお気に入り経路を取り出して入れる
-	
+
 	//結果表示画面でのオプション
 	static Boolean result_all = false;	//すべて表示するか
 	static int result_week = 0;			//表示する曜日選択
 	static int result_time_position;	/*時間ごとに表示する場合、すべての時刻表の何番目から表示することになるのか(時刻によって)
 										  リストがタッチされた時のアイテム取得と合わせて使うと元のリストの何番目がクリックされたか分かる*/
-	
+
 	static int detail_selected_item;	//result_time_positionとlistview.getItemAtPositionから求めた元のリストでの位置
-	
+
 	static String route;	//タイトルバー用に経路を用意、例：(長崎駅前→商業入口)
-	
+
 	static String result_geton_name = null;
 	static String result_getoff_name = null;
 	static String result_geton_ruby = null;
 	static String result_getoff_ruby = null;
 	static String company_name = null;
-	
+
 	//画面遷移の状態
 	static int state = 0;
 	/* state = 0 : 検索(Child1_search)
 	 *       = 1 : 検索結果(Child1_result)
 	 *       = 2 : 経路詳細(Child1_detail)
 	 *       = 3 : 停留所検索結果(Child1_select)*/
-	
-	
-    @Override  
-    public void onCreate(Bundle savedInstanceState) {  
-        super.onCreate(savedInstanceState);  
+
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.parent1);
-        
+
         //画面サイズ取得
         WindowManager wm = (WindowManager)getSystemService(WINDOW_SERVICE);
     	Display disp = wm.getDefaultDisplay();
     	disp_width = disp.getWidth();
     	disp_height = disp.getHeight();
-    	
+
         //ピクセル密度からdipな倍率を取得
-        DisplayMetrics metrics = new DisplayMetrics();  
+        DisplayMetrics metrics = new DisplayMetrics();
 		wm.getDefaultDisplay().getMetrics(metrics);
 		dip_scale = metrics.scaledDensity;
-		
+
         //子アクティビティを入れるコンテナ
         container1 = (LinearLayout)findViewById(R.id.parent1_container);
-        
+
         //検索画面を表示
         showChild_search();
     }
-    
+
     /***** コンテナを初期化して子アクティビティを入れる関数、子アクティビティからも呼ばれる *****/
     //検索画面
     public void showChild_search(){
@@ -91,7 +98,7 @@ public class ParentSearch extends ActivityGroup{
         Window childActivity = getLocalActivityManager().startActivity("child1Activity_search",intent);
         container1.addView(childActivity.getDecorView());
     }
-    
+
     //検索結果
     public void showChild_result() {
         state = 1;
@@ -100,7 +107,7 @@ public class ParentSearch extends ActivityGroup{
         Window childActivity = getLocalActivityManager().startActivity("child1Activity_result",intent);
         container1.addView(childActivity.getDecorView());
     }
-    
+
     //時刻詳細
     public void showChild_detail() {
         state = 2;
@@ -109,7 +116,7 @@ public class ParentSearch extends ActivityGroup{
         Window childActivity = getLocalActivityManager().startActivity("child1Activity_detail",intent);
         container1.addView(childActivity.getDecorView());
     }
-    
+
     //バックキーが押された時の対応
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
